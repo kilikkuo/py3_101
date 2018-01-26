@@ -9,7 +9,7 @@ def wait_for_event(e):
 
 def wait_for_event_with_timeout(e, t):
     # 此執行緒會進行迴圈, 檢查如果 e 的狀態沒有被 set, 就進入執行
-    while not e.isSet():
+    while not e.is_set():
         print('[block-with-timeout] wait_for_event_with_timeout starting')
         # 在此等待 t 秒, 並取得 e 的設定狀態
         event_is_set = e.wait(t)
