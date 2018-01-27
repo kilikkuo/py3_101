@@ -16,7 +16,9 @@ class Dog(Animal):
 
 class Cat(Animal):
     def __init__(self, name):
+        # 遮蔽父類別的初始化, 若有使用到父類別屬性/方法, 會發生例外
         Animal.__init__(self, name)
+        pass
     def make_sound(self):
         print('MEOw ~~')
 
