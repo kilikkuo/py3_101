@@ -4,42 +4,11 @@ import pickle
 import datetime
 from pprint import pprint
 from threading import Lock
+from singleton import Singleton
 
 def debug_print(msg):
     if False:
-        print(msg)
-
-class Singleton(type):
-    # 類別的唯一變數, 所有類別的實體都共享這個變數
-    __instance = None
-    __ref_count = 0
-    def __call__(cls, *args, **argd):
-        # 當有繼承此 Singleton 類別的子類別被初始時, 此函數都會被執行
-        if not cls.__instance:
-            cls.__instance = super(Singleton, cls).__call__(*args, **argd)
-        # 將類別被參考的記數 + 1
-        cls.__ref_count += 1
-        return cls.__instance
-
-    def close(cls):
-        """
-        Derived class needs to call this method to decrease refcount.
-        """
-        cls.__ref_count -= 1
-        assert cls.__ref_count >=0, "Too many close for %s, check !!"%(str(cls))
-        # 當類別被參考的記數為 0 時, 表示無人參考此 singleton 實體, 可以放心解構.
-        if cls.__ref_count == 0:
-            cls.__instance = None
-
-    def can_shutdown(cls):
-        """
-        Derived class should ask this for cleanup its internal data.
-        """
-        # 檢查是否可以關閉 singleton 實體
-        return cls.__ref_count == 0
-
-    def __del__(cls):
-        assert cls.__ref_count == 0, "%s is not closed properly, un-paired creation & close"%(str(cls))
+        print('[sourcedatabank.py] ' + msg)
 
 def read_ticker_CSV(csvPath):
     """
