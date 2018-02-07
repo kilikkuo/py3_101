@@ -65,25 +65,29 @@ class RSICondition(Condition):
     def _verify(self):
         from rsi import calc_smooth_rsi, SMOOTH_RSI_FACTOR
         from functools import reduce
+        result = False
+        try:
+            # TODO : Need to handle different base : "week" / "quarter"
+            # 目前只支援以"天數"為基礎的 RSI 計算
+            assert self.base == "day"
+            prices, dates = self.sdb.get_prices(self.ticker, self.unit * SMOOTH_RSI_FACTOR,\
+                                                price_at = self.price_at,
+                                                pivot = self.pivot)
+            if prices == []:
+                self.warning("No price data in SDB, skip it")
+                return False
+            # 將價格串列從舊到新排序
+            prices_old_to_new = list(reversed(prices))
+            rsi = calc_smooth_rsi(self.unit, prices_old_to_new)
 
-        # TODO : Need to handle different base : "week" / "quarter"
-        # 目前只支援以"天數"為基礎的 RSI 計算
-        assert self.base == "day"
-        prices, dates = self.sdb.get_prices(self.ticker, self.unit * SMOOTH_RSI_FACTOR,\
-                                            price_at = self.price_at,
-                                            pivot = self.pivot)
-        if prices == []:
-            self.warning("No price data in SDB, skip it")
-            return False
-        # 將價格串列從舊到新排序
-        prices_old_to_new = list(reversed(prices))
-        rsi = calc_smooth_rsi(self.unit, prices_old_to_new)
-        self.verbose("rsi=%f"%(rsi))
-        # 將 statement 中的特殊符號做轉換, 並且進行值計算
-        replaced_cond = self.statement.replace("@", "%f"%(rsi))
-        result = eval(replaced_cond)
-        self.verbose("[%s][%s] Verifying ... base(%s)/unit(%d)/statement(%s)/result(%d)"%(\
-                     self.ticker, self.pivot, self.base, self.unit, self.statement, result))
+            self.verbose("rsi=%f"%(rsi))
+            # 將 statement 中的特殊符號做轉換, 並且進行值計算
+            replaced_cond = self.statement.replace("@", "%f"%(rsi))
+            result = eval(replaced_cond)
+            self.verbose("[%s][%s] Verifying ... base(%s)/unit(%d)/statement(%s)/result(%d)"%(\
+                        self.ticker, self.pivot, self.base, self.unit, self.statement, result))
+        except:
+            self.error('[{}] RSI error - start from {}'.format(self.ticker, self.pivot))
         return result
 
 def create_tasks_from_conditions(sdb, ticker, conditions):
@@ -141,26 +145,16 @@ class Verification(Task):
 
         if final_result:
             color_code_prefix = "\033[1;33m" if self.desc == "entry" else "\033[1;34m"
-            color_code_postfix = "\033[m"
 
             tname = '台灣50' if self.ticker == '0050' else '未知'
-            tname_str = "%s"
-            if len(tname) == 3:
-                tname_str = "%5s"
-            elif len(tname) == 2:
-                tname_str = "%6s"
-            else:
-                tname_str = "%s"
-            msg = "%sTICKER(%s)(" + tname_str + ") => %s %s"
+            msg = '{}TICKER({})({:6s}) => {} \033[m'.format(color_code_prefix, self.ticker, tname, self.desc)
 
             print('msg : {}'.format(msg))
             '''
             # 等到 Notifier 有自己的 email 通知服務的帳號/密碼之後即可將這段程式碼打開
             # add_notification(self.notifiees,\
             #                  [NOTIFICATION_TYPE_EMAIL],\
-            #                  msg%(color_code_prefix,\
-            #                  self.ticker, tname, self.desc,\
-            #                  color_code_postfix))
+            #                  msg)
             '''
         pass
 
@@ -452,10 +446,55 @@ def generate_personal_rules():
 
     pass
 
+def generate_demo_rules():
+    # RSI 相關 =====================================================
+    cond_set1 = { "unit"    : 5,
+                  "index"   : "rsi",
+                  "statement" : "@<=30",
+                  "base"    : "day"}
+    cond_set2 = { "unit"    : 5,
+                  "index"   : "rsi",
+                  "statement" : "@>=70",
+                  "base"    : "day",
+                  "price_at"   : "close"}
+
+    tickers = ['5285', '4164', '4904', '2356', '6168', '1314', '2886', '2823',
+               '2015', '2353', '6552', '3044', '6183', '4958', '2816', '9910',
+               '1303', '3130', '3583', '8464', '6177', '6415', '3006', '5906',
+               '6213', '1218', '1506', '1760', '2516', '2855', '3653', '1236',
+               '3060', '3406', '6230', '4190', '3046', '1711', '2332', '2108',
+               '1235', '8105', '1473', '6145', '4968', '1605', '2375', '2901',
+               '1906', '3058']
+
+    for ticker in tickers:
+        rid1 = add_strategies_to_rulesetmanager(ticker,\
+                                                [cond_set1],\
+                                                ["kilikkuo"],\
+                                                "entry")
+        assert rid1 != 0, "rid1 should not be zero."
+
+        rid2 = add_strategies_to_rulesetmanager(ticker,\
+                                                [cond_set2],\
+                                                ["kilikkuo"],\
+                                                "exit")
+
+        assert rid2 != 0, "rid should not be zero."
+        assert rid1 != rid2, "rid1 should not be rid2."
+
+    pass
+
 if __name__ == "__main__":
     clear_ruleset_pickle()
+    demo_all = False
+    if demo_all:
+        from sourcedatabank import prepare_sourcedatabank_for_all
+        prepare_sourcedatabank_for_all()
+
     globals()['__start_rulesetmanager']()
     # NOTE: Create your own rules
-    generate_personal_rules()
+    if demo_all:
+        generate_demo_rules()
+    else:
+        generate_personal_rules()
     globals()['__close_rulesetmanager']()
     shutdown_eventloop()

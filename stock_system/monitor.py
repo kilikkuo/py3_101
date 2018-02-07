@@ -64,7 +64,8 @@ $> python3 monitor.py
 """
 def test_rulemonitor():
     from rulesetmanager import start_rulesetmanager, close_rulesetmanager,\
-                                generate_personal_rules, clear_ruleset_pickle
+                                generate_personal_rules, clear_ruleset_pickle,\
+                                generate_demo_rules
 
     # 將既有的 pickled rule 刪除
     clear_ruleset_pickle()
@@ -75,10 +76,11 @@ def test_rulemonitor():
 
     # 透過 rulesetmanager 新增/刪除 rules
     generate_personal_rules()
+    # generate_demo_rules()
 
     # 讓主執行緒睡 5 秒, 其他的 worker thread 可以繼續工作
     from time import sleep
-    sleep(5)
+    sleep(10)
     # 關閉 monitor
     close_monitor()
     # 關閉 rulesetmanager

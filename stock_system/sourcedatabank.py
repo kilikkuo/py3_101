@@ -31,16 +31,19 @@ def read_ticker_CSV(csvPath):
         dic_inner_data = {}
         for idx, row in enumerate((list(csv_data))):
             lower_row = dict((k.lower(), v) for k, v in row.items())
+            has_exception = False
             for k, v in lower_row.items():
                 try:
                     if k != "date" and v is not None:
                         lower_row[k] = float(v)
                 except:
+                    has_exception = True
                     debug_print('Excetpion while reading csv data, k = {}, v = {}'.format(k, v))
                     pass
             try:
-                if lower_row['volume'] == 0:
+                if lower_row['volume'] == 0 or has_exception:
                     # 如果當日沒有交易量, 則不需要將資料放入 SourceDataBank, 因為無意義.
+                    # 如果讀取 row 有問題, 例如沒有價格, 也不要放入資料庫
                     continue
             except:
                 debug_print('Excetpion while reading csv data, row = {}'.format(lower_row))
@@ -63,7 +66,7 @@ class SourceDataBank(metaclass=Singleton):
     讀取/更新/etc...等操作應該保證是 thread-safe. 因為任何 task 可能在不同的 thread
     裡對 SourceDataBank 執行操作
     """
-    def __init__(self):
+    def __init__(self, data_folder=None):
         debug_print("SourceDataBank.__init__")
 
         """
@@ -76,8 +79,11 @@ class SourceDataBank(metaclass=Singleton):
                       'start': '2016-08-11'}}
         """
         cwd = os.getcwd()
-        # 預設寫死 2018-02-02, 可改作為動態輸入
-        self.data_folder = os.path.join(cwd, '%04d-%02d-%02d_0050'%(2018, 2, 2))
+        if data_folder and os.path.isdir(data_folder):
+            self.data_folder = data_folder
+        else:
+            # 預設寫死 2018-02-02, 可改作為動態輸入
+            self.data_folder = os.path.join(cwd, '%04d-%02d-%02d_0050'%(2018, 2, 2))
         # pickled file 名稱為 sourcedata.p
         self.source_bank_file = os.path.join(cwd, "sourcedata.p")
         # 資料是否已載入完成
@@ -94,11 +100,11 @@ class SourceDataBank(metaclass=Singleton):
     def __startup(self):
         assert not self.is_src_loaded, "Should not startup twice !!"
         # 將 pickled 資料載入程式
-        self.__load_from_pickle(self.source_bank_file)
+        self.__load_from_pickle()
 
-    def __load_from_pickle(self, filename):
-        if not os.path.exists(filename) and not os.path.isfile(filename):
-            # 如果 pickled 檔案不存在, 或 filename 不是一個檔案, 表示第一次載入!
+    def __load_from_pickle(self):
+        if not os.path.exists(self.source_bank_file) and not os.path.isfile(self.source_bank_file):
+            # 如果 pickled 檔案不存在, 或不是一個檔案, 表示第一次載入!
             debug_print("Presumming it's your 1st time ... nothing to load in")
             self.__src_data.clear()
             # 利用下載下來的 csv 重新載入
@@ -106,7 +112,7 @@ class SourceDataBank(metaclass=Singleton):
         else:
             try:
                 # 從 pickled 檔案載入
-                self.__src_data = pickle.load(open(filename, "rb"))
+                self.__src_data = pickle.load(open(self.source_bank_file, "rb"))
             except:
                 debug_print("Failed to load src pickle !!")
                 return
@@ -251,7 +257,7 @@ class SourceDataBank(metaclass=Singleton):
     def __rollback(self):
         # 清除所有成是在記憶體內的資料, 重新從檔案存取.
         self.__src_data.clear()
-        self.__load_from_pickle(self.source_bank_file)
+        self.__load_from_pickle()
 
     def close(self):
         Singleton.close(SourceDataBank)
@@ -293,6 +299,18 @@ def prepare_sourcedatabank_for_test():
     assert ['2018-01-29', '2018-01-26', '2018-01-25'] == dates, '[Unexpected] dates'
     sdb.close()
     print('[SourceDataBank] Test Completed !!')
+
+def prepare_sourcedatabank_for_all():
+    cwd = os.getcwd()
+    # 先刪除 sourcedata.p 以便執行乾淨環境的測試
+    source_bank_file = os.path.join(cwd, 'sourcedata.p')
+    if os.path.exists(source_bank_file):
+        os.remove(source_bank_file)
+
+    sdb = SourceDataBank(os.path.join(cwd, '2018-02-02_all'))
+    # 讀取 2018-02-02_all 資料夾下所有資料並且更新進 SDB
+    sdb.close()
+    print('[SourceDataBank] All data prepared !!')
 
 if __name__ == "__main__":
     prepare_sourcedatabank_for_test()
