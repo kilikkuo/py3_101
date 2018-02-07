@@ -31,7 +31,6 @@ def read_ticker_CSV(csvPath):
         dic_inner_data = {}
         for idx, row in enumerate((list(csv_data))):
             lower_row = dict((k.lower(), v) for k, v in row.items())
-            debug_print(lower_row)
             for k, v in lower_row.items():
                 try:
                     if k != "date" and v is not None:
@@ -145,10 +144,10 @@ class SourceDataBank(metaclass=Singleton):
             src_start = ticker_src_data.get("start", new_start)
             src_end = ticker_src_data.get("end", new_end)
             if not src_start or not src_end:
-                self.warning("[%s] No Src start date or end date - continue "%(ticker))
+                debug_print("[%s] No Src start date or end date - continue "%(ticker))
                 continue
             if not new_start or not new_end:
-                self.warning("[%s] No New start date or end date - continue "%(ticker))
+                debug_print("[%s] No New start date or end date - continue "%(ticker))
                 continue
             final_start = min(src_start, new_start)
             final_end = max(src_end, new_end)
@@ -208,7 +207,7 @@ class SourceDataBank(metaclass=Singleton):
         with self.op_lock:
             ticker_data = self.__src_data.get(ticker, {})
             if not ticker_data:
-                self.warning("No ticker_data for ticker(%s) "%(ticker))
+                debug_print("No ticker_data for ticker(%s) "%(ticker))
                 return [], []
             start = ticker_data.get("start", "")
             end = ticker_data.get("end", "")
@@ -216,7 +215,7 @@ class SourceDataBank(metaclass=Singleton):
             strpivot = '%04d-%02d-%02d'%(pivot.year, pivot.month, pivot.day)
             if  strpivot < start or strpivot > end:
                 # 檢查 pivot date 是否超過最早或最晚的資料日
-                self.warning("Pivot(%s) is not in existing period. S(%s)=>E(%s) "%(strpivot, start, end))
+                debug_print("Pivot(%s) is not in existing period. S(%s)=>E(%s) "%(strpivot, start, end))
 
             dates = [date for date in ticker_data if date not in ["start", "end"]]
             # 經過 sort 後, 日期為由離現在近到遠
@@ -237,7 +236,7 @@ class SourceDataBank(metaclass=Singleton):
                 elif date < strpivot:
                     if not found:
                         found = True
-                        self.warning("Pivot doesn't match exactlly, find closest one(%s)!!"%(date))
+                        debug_print("Pivot doesn't match exactlly, find closest one(%s)!!"%(date))
                     prices.append(ticker_data[date][price_key])
                     ret_dats.append(date)
                     count -= 1
@@ -245,7 +244,7 @@ class SourceDataBank(metaclass=Singleton):
                     break
 
             if len(prices) != days:
-                self.warning("Length(%d) of prices doesn't match expected days(%d) !!"%(len(prices), days) +
+                debug_print("Length(%d) of prices doesn't match expected days(%d) !!"%(len(prices), days) +
                       "(%s, %s)"%(ticker, strpivot))
             return prices, ret_dats
 
