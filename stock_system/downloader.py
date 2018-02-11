@@ -55,7 +55,7 @@ def crawl_tse_data_and_save(downloadDir, day, month, year):
         fieldnames = ['Date', 'Open', 'High', 'Low', 'Close' ,'Volume', 'Adj Close']
         # **使用 a+ 的目的**
         # 若該檔案已存在, 則開啟並且將新資料從檔案最末端 append 上去.
-        f = open(downloadFile, 'a+')
+        f = open(downloadFile, 'a+', encoding='utf8')
         # 讀取檔案第一行
         f.seek(0)
         first_line = f.readline()

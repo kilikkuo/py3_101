@@ -23,7 +23,7 @@ def read_ticker_CSV(csvPath):
     assert os.path.isfile(csvPath), "File(%s) does NOT exist !"%(csvPath)
     ticker = os.path.splitext(os.path.basename(csvPath))[0]
 
-    with open(csvPath, 'r') as f:
+    with open(csvPath, 'r', encoding='utf8') as f:
         csv_data = csv.DictReader(f)
         start = None
         end = None

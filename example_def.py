@@ -9,7 +9,7 @@ def create_and_write_to_file(*args):
     """
     file_path = args[0]
     lyrics = args[1]
-    handle = open(file_path, 'w')
+    handle = open(file_path, 'w', encoding='utf8')
     # 將資料寫入
     handle.write(lyrics)
     # 結束寫入, 關閉檔案
@@ -19,7 +19,7 @@ def file_path_builder(folder, file_name):
     return os.path.join(folder, file_name)
 
 def get_file_data(file_path, lines = False):
-    handle = open(file_path, 'r')
+    handle = open(file_path, 'r', encoding='utf8')
     data = None
     # 利用 if / elif / else 作條件對應的動作
     if lines:
@@ -47,6 +47,7 @@ def main():
 
     lyrics_r = get_file_data(file_path)
     print(lyrics_r)
+    # readlines 會將換行符號 '\n' 當成字元一起讀入, 需要處理
     lyrics_r = get_file_data(file_path, True)
     print(lyrics_r)
     # lyrics_r = get_file_data(file_path, lines=True)

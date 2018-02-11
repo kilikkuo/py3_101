@@ -16,7 +16,7 @@ for root, dirs, files in os.walk(csv_dir):
     if files:
         for f in files:
             fname = os.path.join(csv_dir, f)
-            with open(fname, "rb" ) as f:
+            with open(fname, "rb", encoding='utf8') as f:
                 while True:
                     buf = f.read(block_size)
                     if not buf:
@@ -27,7 +27,7 @@ print('MD5 (csv) : {}'.format(m.hexdigest()))
 sdbp_fname = os.path.join(cwd, 'sourcedata.p')
 # 如果有產生過 sourcedata.p 之後, 也將 sourcedata.p 餵入 md5 產生 digest
 if os.path.exists(sdbp_fname):
-    with open(sdbp_fname, "rb" ) as f:
+    with open(sdbp_fname, "rb", encoding='utf8') as f:
         while True:
             buf = f.read(block_size)
             if not buf:

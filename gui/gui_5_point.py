@@ -3,6 +3,7 @@ import matplotlib.markers as mkrs
 import random
 
 # https://matplotlib.org/api/markers_api.html
+# 宣告一個充滿 marker 符號的字串列
 markers = ['p', '*', '+', 'x', 'd', 'o', 'v', 's', 'h', '<', '4']
 # R/G/B 為各自隨機的 0 ~ 1 之間的數字.
 colors = [(random.random(), random.random() / 3, random.random() / 2 ) for x in range(len(markers))]
